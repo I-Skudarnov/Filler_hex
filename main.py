@@ -749,16 +749,21 @@ async def goodbye(surf, big):
 
 async def web_stopped(surf, big):
     """На вебе N/Esc не завершают программу (страницу не перезагрузить без
-    потери разрешения на звук) — но должна быть чёткая точка «остановки»,
-    а не мгновенный проброс обратно в экран настройки игроков. Показываем
-    финальное сообщение и ждём любую клавишу, чтобы вернуться в меню."""
+    потери разрешения на звук) — но должна быть чёткая точка «остановки»:
+    показываем прощальный экран и уводим на главную страницу сайта, а не
+    начинаем новую партию."""
     surf.fill(BLACK)
     msg = big.render("Thanks for playing !", True, UI_YELLOW)
     surf.blit(msg, ((SCREEN_W - msg.get_width()) // 2, SCREEN_H // 2 - 30))
-    hint = load_font(18).render("Press any key to play again", True, UI_GRAY)
-    surf.blit(hint, ((SCREEN_W - hint.get_width()) // 2, SCREEN_H // 2 + 24))
     pygame.display.flip()
-    await wait_key()
+    try:
+        import platform
+        platform.window.location.href = "https://i-skudarnov.github.io/"
+    except Exception:
+        pass
+    while True:                  # удерживаем экран на случай задержки редиректа
+        pygame.event.get()      # вычитываем события, чтобы вкладка не «висла»
+        await asyncio.sleep(0.1)
 
 
 async def main():
