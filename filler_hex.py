@@ -733,20 +733,6 @@ def load_font(size):
     return pygame.font.Font(None, size)
 
 
-async def goodbye(surf, big):
-    """Финальный экран после выхода (N на Play again / Esc на старт-экране):
-    программа завершена. В браузере вкладку не закрыть — показываем сообщение."""
-    surf.fill(BLACK)
-    msg = big.render("Thanks for playing !", True, UI_YELLOW)
-    surf.blit(msg, ((SCREEN_W - msg.get_width()) // 2, SCREEN_H // 2 - 30))
-    hint = load_font(18).render("Refresh the page (F5) to play again", True, UI_GRAY)
-    surf.blit(hint, ((SCREEN_W - hint.get_width()) // 2, SCREEN_H // 2 + 24))
-    pygame.display.flip()
-    while True:                  # удерживаем экран; новых партий не начинаем
-        pygame.event.get()      # вычитываем события, чтобы вкладка не «висла»
-        await asyncio.sleep(0.1)
-
-
 async def main():
     # Микшер: формат задаём ДО pygame.init(); моно 16-бит, 22050 Гц.
     try:
@@ -767,7 +753,7 @@ async def main():
     clock = pygame.time.Clock()
 
     # Внешний цикл — стартовый экран (выбор игроков). «N» на Play again и Esc на
-    # старт-экране ЗАВЕРШАЮТ программу (финальный экран goodbye). Esc внутри
+    # старт-экране ЗАВЕРШАЮТ программу (окно закрывается). Esc внутри
     # партии возвращает к выбору игроков.
     quit_all = False
     while not quit_all:
@@ -788,8 +774,8 @@ async def main():
                 quit_all = True               # N — выход из программы
                 break
 
-    await goodbye(surf, big)                  # финальный экран, новую игру не начинаем
     pygame.quit()
+    sys.exit()
 
 
 if __name__ == "__main__":
