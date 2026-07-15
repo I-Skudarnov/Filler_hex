@@ -226,27 +226,40 @@ class Game:
 # ── Искусственный интеллект (Beginner / Expert / Master = 1 / 2 / 3 хода) ──
 def weighted_gain_apply(game, player, color):
     """Применить ход цветом color к game (МУТИРУЕТ game) и вернуть взвешенный
-    прирост: захваченные на этом ходу гексы считаются за 2, если они выходят
-    ЗА ПРАВЫЙ КРАЙ группы (для P1) / ЗА ЛЕВЫЙ КРАЙ (для P2), иначе за 1.
+    прирост: захваченные на этом ходу гексы считаются за 3, если они лежат
+    ЗА ПРАВЫМ КРАЕМ группы (для P1) / ЗА ЛЕВЫМ КРАЕМ (для P2, наступление
+    в сторону соперника); иначе за 2, если они лежат ВЫШЕ верхнего края
+    группы (для P1) / НИЖЕ нижнего края (для P2); все остальные — за 1.
 
-    Это поощряет стремление «только вперёд» — наступление в сторону соперника.
+    Это поощряет стремление к распространению по полю: сильнее всего —
+    вперёд, на соперника; чуть слабее — «вбок» (вверх/вниз); слабее всего —
+    в глубь уже своей территории.
     """
     cells_before = game.cells_of(player)
     if not cells_before:
         game.apply_move(player, color)
         return 0
-    # край группы по X до хода: правый для P1, левый для P2
+    # края группы до хода: по X (правый для P1 / левый для P2) и по Y
+    # (верхний для P1 / нижний для P2; на экране Y растёт вниз).
     xs = [hex_center(c, r)[0] for c, r in cells_before]
-    edge = max(xs) if player == 0 else min(xs)
+    ys = [hex_center(c, r)[1] for c, r in cells_before]
+    x_edge = max(xs) if player == 0 else min(xs)
+    y_edge = min(ys) if player == 0 else max(ys)
     before = set(cells_before)
     game.apply_move(player, color)
     val = 0
     for c in range(COLS):
         for r in range(ROWS):
             if game.owner[c][r] == player and (c, r) not in before:
-                cx = hex_center(c, r)[0]
-                forward = (cx > edge) if player == 0 else (cx < edge)
-                val += 2 if forward else 1
+                cx, cy = hex_center(c, r)
+                beyond_x = (cx > x_edge) if player == 0 else (cx < x_edge)
+                beyond_y = (cy < y_edge) if player == 0 else (cy > y_edge)
+                if beyond_x:
+                    val += 3
+                elif beyond_y:
+                    val += 2
+                else:
+                    val += 1
     return val
 
 
@@ -758,6 +771,7 @@ async def web_stopped(surf, big):
     pygame.display.flip()
     try:
         import platform
+        platform.window.onbeforeunload = None   # без этого браузер спрашивает "Покинуть сайт?"
         platform.window.location.href = "https://i-skudarnov.github.io/"
     except Exception:
         pass
